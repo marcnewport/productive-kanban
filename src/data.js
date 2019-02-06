@@ -2,6 +2,7 @@ import qs from 'qs';
 
 const url = 'https://api.productive.io/api/v2/';
 
+// TODO get this from .env file
 const headers = {
   'X-Auth-Token': '3a403a0e-f76e-4204-b26e-e3a014455e0d',
   'X-Organization-Id': '2555',
@@ -20,8 +21,6 @@ async function getDevelopmentBoards() {
     .then(response => response.data.filter(board => board.attributes.name === 'Development'))
     .catch(error => console.error(error));
 
-  console.log(boards);
-
   return boards.map(board => board.id);
 }
 
@@ -31,9 +30,6 @@ async function getDevelopmentBoards() {
  * @return {[type]} [description]
  */
 async function getTaskData() {
-  const now = Date.now();
-  const after = now - (1.21e+9);
-  const before = now;
 
   const filter = {
     status: 1,
@@ -44,8 +40,6 @@ async function getTaskData() {
   };
 
   const query = qs.stringify({
-    // after,
-    // before,
     filter,
     page,
   });
@@ -66,14 +60,18 @@ export async function getData() {
 
   const developmentBoards = await getDevelopmentBoards();
 
-  console.log('developmentBoards', developmentBoards);
-
   const taskData = await getTaskData();
 
-  console.log('taskData', taskData);
+  const people = await fetch(url + 'people', {headers})
+    .then(response => response.json())
+    .then(response => response)
+    .catch(error => console.error(error));
+
+    console.log('people', people);
 
   // The allowed columns for this sprint
   const allowed = [
+    'backlog',
     'to do',
     'in progress',
     'blocked',
@@ -83,12 +81,18 @@ export async function getData() {
   ];
 
   const backgrounds = [
-    '#fafafa',
-    '#fafaff',
-    '#fffafa',
-    'white',
-    'white',
-    '#fafffa'
+    // '#dfe1e6',
+    // '#97c1f9',
+    // '#ff9696',
+    // '#fdffd1',
+    // '#8edea1',
+    // '#ffffff'
+    '#fff',
+    '#fff',
+    '#fff',
+    '#fff',
+    '#fff',
+    '#fff'
   ];
 
   // Map the allowed columns into a more usable structure
@@ -106,23 +110,27 @@ export async function getData() {
     // Map the task list to the task
     let taskList = taskData.included.find(item => item.id === task.relationships.task_list.data.id);
 
-    // Does this tasklist belong to a development board?
-    if (developmentBoards.indexOf(taskList.relationships.board.data.id) === -1) {
-      return;
-    }
+    // console.log(developmentBoards.indexOf(taskList.relationships.board.data.id));
 
-    console.log('taskList', taskList);
+    // // Does this tasklist belong to a development board?
+    // if (developmentBoards.indexOf(taskList.relationships.board.data.id) === -1) {
+    //   return;
+    // }
 
     // Check if the task list name is in the allowed columns
     let column = columns.find(column => column.title === taskList.attributes.name.toLowerCase());
-
-    console.log(task);
 
     // Push the task into the column
     if (column) {
       task.attributes.tag_list.forEach(tag => {
         if (!isNaN(tag)) task.points = Number(tag);
       });
+
+      if (task.relationships.assignee.data) {
+        const assignee = people.data.find(person => person.id === task.relationships.assignee.data.id);
+        task.assignee = assignee;
+      }
+
       column.tasks.push(task);
     }
   });
