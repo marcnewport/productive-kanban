@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@atlaskit/css-reset": "^3.0.5",
+    "color-hash": "^1.0.3",
+    "hex-contrast-color": "^1.0.1",
     "qs": "^6.6.0",
     "react": "^16.7.0",
     "react-beautiful-dnd": "^10.0.3",

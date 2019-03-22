@@ -5,18 +5,23 @@ import Column from './Column';
 import styled from 'styled-components';
 import '@atlaskit/css-reset';
 
-import {data, getData} from '../data';
+import {getData} from '../data';
 
 const Container = styled.div`
   display: flex;
-  width: 100%:
+  background: #dfe1e6;
+  overflow: scroll;
 `;
 
 class App extends Component {
-  state = data;
+  state = {
+    columns: [],
+  }
 
   async componentDidMount() {
-    this.setState(await getData());
+    this.setState({
+      columns: await getData(),
+    });
   }
 
   render() {

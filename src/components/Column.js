@@ -18,19 +18,18 @@ const Title = styled.h4`
 
 const TaskList = styled.div`
   padding: 8px;
+  min-width: 300px;
 `;
 
 class Column extends Component {
 
   render() {
-    // 
     const Container = styled.div`
       flex: 1;
       margin: 8px;
       border: 1px solid lightgrey;
       border-radius: 2px;
       position: relative;
-
       background: ${this.props.column.color}
     `;
 
@@ -38,6 +37,8 @@ class Column extends Component {
     this.props.column.tasks.forEach(task => {
       if (task.points) points += task.points;
     });
+
+    // TODO : pass points up to calculate sprint points
 
     return (
       <Container>

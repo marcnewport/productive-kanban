@@ -1,23 +1,43 @@
 import React, { Component } from 'react';
+import ColorHash from 'color-hash';
+import textContrastColor from 'hex-contrast-color';
 
 import styled from 'styled-components';
 
-const Container = styled.div`
+const Container = styled.a`
   padding: 8px;
   border: 1px solid lightgrey;
   border-radius: 2px;
   margin-bottom: 8px;
   background: white;
+  display: block;
+  position: relative;
 `;
 
 const Title = styled.div`
-
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #333;
+  padding-right: 30px;
 `;
 
 const Points = styled.div`
+  /* font-size: 0.8em; */
   line-height: 30px;
   height: 30px;
+  width: 30px;
   display: inline-block;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  text-align: center;
+  /* border-radius: 50%;
+  border: 1px solid #333; */
+  color: #333;
+`;
+
+const TaskFooter = styled.div`
+  overflow: hidden;
 `;
 
 const Assignee = styled.div`
@@ -27,11 +47,13 @@ const Assignee = styled.div`
   border-radius: 50%;
   overflow: hidden;
   float: right;
-  background: #dfe1e6;
   text-align: center;
   line-height: 30px;
-  color: #fff;
+`;
 
+const EmptyAssignee = styled(Assignee)`
+  background: #dfe1e6;
+  color: #fff;
 `;
 
 class Column extends Component {
@@ -43,30 +65,63 @@ class Column extends Component {
 
   render() {
 
-    let assignee;
+    if (this.props.task.project.attributes.due_date) console.log(this.props.task.project.attributes.due_date);
+
+    let points;
+
+    if (this.props.task.points) {
+      points = <Points>
+        {this.props.task.points}
+      </Points>
+    }
+
+    let assignee = <Assignee></Assignee>;
 
     if (this.props.task.assignee) {
-      if (this.props.task.assignee.avatar_url !== '') {
-        assignee = <img src={this.props.task.assignee.attributes.avatar_url} alt={this.props.task.assignee.attributes.first_name + ' ' + this.props.task.assignee.attributes.last_name} width="100%" />;
+      if (this.props.task.assignee.attributes.avatar_url) {
+        assignee = <Assignee>
+          <img src={this.props.task.assignee.attributes.avatar_url} alt={this.props.task.assignee.attributes.first_name + ' ' + this.props.task.assignee.attributes.last_name} width="100%" />
+        </Assignee>;
       } else {
-        assignee = this.props.task.assignee.attributes.first_name[0].toUpperCase();
+        assignee = <EmptyAssignee>
+          {this.props.task.assignee.attributes.first_name[0].toUpperCase()}
+        </EmptyAssignee>;
       }
     }
 
+    const colorHash = new ColorHash();
+    const bgColor = colorHash.hex(this.props.task.project.attributes.name.substring(0, 20));
+    // const fgColor = textContrastColor(bgColor);
+
+    const Project = styled.div`
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 0.8em;
+      display: inline-block;
+      color: ${bgColor};
+      border: 1px solid ${bgColor};
+    `;
+
     return (
-      <Container>
+      <Container href={this.props.task.href} target="_blank" rel="noreferrer noopener">
+
+        {points}
 
         <Title>
-          <a href={this.props.task.href} target="_blank" rel="noreferrer noopener">
-            {this.props.task.attributes.title}
-          </a>
+          {this.props.task.attributes.title}
         </Title>
 
-        <Points>{this.props.task.points}</Points>
+        <TaskFooter>
+          <Project>
+            {this.props.task.project.attributes.name}
+          </Project>
 
-        <Assignee>
+          <div>
+            {this.props.task.project.attributes.due_date}
+          </div>
+
           {assignee}
-        </Assignee>
+        </TaskFooter>
 
       </Container>
     );

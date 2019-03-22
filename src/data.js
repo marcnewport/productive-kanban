@@ -11,21 +11,6 @@ const headers = {
 
 
 /**
- * [getBoards description]
- * @return {[type]} [description]
- */
-async function getDevelopmentBoards() {
-
-  const boards = await fetch(url + 'boards', {headers})
-    .then(response => response.json())
-    .then(response => response.data.filter(board => board.attributes.name === 'Development'))
-    .catch(error => console.error(error));
-
-  return boards.map(board => board.id);
-}
-
-
-/**
  * [getTasks description]
  * @return {[type]} [description]
  */
@@ -58,20 +43,30 @@ async function getTaskData() {
  */
 export async function getData() {
 
-  const developmentBoards = await getDevelopmentBoards();
-
   const taskData = await getTaskData();
+  console.log(taskData);
 
-  const people = await fetch(url + 'people', {headers})
-    .then(response => response.json())
-    .then(response => response)
-    .catch(error => console.error(error));
+  // // The unique data types
+  // const uniqueTypes = [...new Set(taskData.included.map(x => x.type))];
+  // console.log(uniqueTypes);
 
-    console.log('people', people);
+  // The allowed boards
+  const allowedBoards = [
+    'development',
+    // 'design',
+    'board',
+  ];
+
+  const boards = taskData.included.filter(item => item.type === 'boards' && allowedBoards.includes(item.attributes.name.toLowerCase()));
+
+  // taskData.included.map(x => {
+  //   // console.log(x);
+  //   if (x.type === 'people') console.log(x);
+  // });
 
   // The allowed columns for this sprint
-  const allowed = [
-    'backlog',
+  const allowedColumns = [
+    // 'backlog',
     'to do',
     'in progress',
     'blocked',
@@ -92,11 +87,12 @@ export async function getData() {
     '#fff',
     '#fff',
     '#fff',
+    '#fff',
     '#fff'
   ];
 
   // Map the allowed columns into a more usable structure
-  let columns = allowed.map((title, id) => {
+  let columns = allowedColumns.map((title, id) => {
     return {
       id,
       title,
@@ -110,15 +106,12 @@ export async function getData() {
     // Map the task list to the task
     let taskList = taskData.included.find(item => item.id === task.relationships.task_list.data.id);
 
-    // console.log(developmentBoards.indexOf(taskList.relationships.board.data.id));
-
-    // // Does this tasklist belong to a development board?
-    // if (developmentBoards.indexOf(taskList.relationships.board.data.id) === -1) {
-    //   return;
-    // }
+    // Does this tasklist belong to allowed boards?
+    const board = boards.find(item => item.id === taskList.relationships.board.data.id);
+    if (!board) { return; }
 
     // Check if the task list name is in the allowed columns
-    let column = columns.find(column => column.title === taskList.attributes.name.toLowerCase());
+    let column = columns.find(column => taskList.attributes.name.toLowerCase().includes(column.title));
 
     // Push the task into the column
     if (column) {
@@ -126,8 +119,15 @@ export async function getData() {
         if (!isNaN(tag)) task.points = Number(tag);
       });
 
+      // Attach project to task
+      if (task.relationships.project.data) {
+        const project = taskData.included.find(item => item.id === task.relationships.project.data.id);
+        task.project = project;
+      }
+
+      // Attach assignee to task
       if (task.relationships.assignee.data) {
-        const assignee = people.data.find(person => person.id === task.relationships.assignee.data.id);
+        const assignee = taskData.included.find(item => item.id === task.relationships.assignee.data.id);
         task.assignee = assignee;
       }
 
@@ -135,60 +135,46 @@ export async function getData() {
     }
   });
 
-  return {
-    columns,
-  }
+  return columns;
 }
 
 
 // Dummy data
-export const data = {
-  tasks: {
-    t1: {
-      id: 't1',
-      content: 'test',
-    },
-    t2: {
-      id: 't2',
-      content: 'test',
-    }
+export const data = [
+  {
+    id: 'c1',
+    title: 'Todo',
+    tasks: [
+      {
+        id: 't1',
+        attributes: {
+          title: 'Test',
+        },
+      },
+      {
+        id: 't2',
+        attributes: {
+          title: 'Test',
+        },
+      }
+    ],
   },
-  columns: [
-    {
-      id: 'c1',
-      title: 'Todo',
-      tasks: [
-        {
-          id: 't1',
-          attributes: {
-            title: 'Test',
-          },
+  {
+    id: 'c2',
+    title: 'In progress',
+    tasks: [
+      {
+        id: 't3',
+        attributes: {
+          title: 'Test',
         },
-        {
-          id: 't2',
-          attributes: {
-            title: 'Test',
-          },
-        }
-      ],
-    },
-    {
-      id: 'c2',
-      title: 'In progress',
-      tasks: [
-        {
-          id: 't3',
-          attributes: {
-            title: 'Test',
-          },
+      },
+      {
+        id: 't4',
+        attributes: {
+          title: 'Test',
         },
-        {
-          id: 't4',
-          attributes: {
-            title: 'Test',
-          },
-        }
-      ],
-    }
-  ],
-};
+      }
+    ],
+  }
+];
